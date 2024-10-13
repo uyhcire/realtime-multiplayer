@@ -611,6 +611,8 @@ export class RealtimeClient extends RealtimeEventHandler {
    * @returns {{item: (AssistantItemType | null)}}
    */
   cancelResponse(id, sampleCount = 0) {
+    return; // TODO XXX
+    
     if (!id) {
       this.realtime.send('response.cancel');
       return { item: null };
