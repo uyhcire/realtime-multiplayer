@@ -15,10 +15,10 @@
 // - Try speaking quickly as if excited
 // `;
 
-export const instructions = `
-## Context
+export const instructionsTemplate = `
+## Content
 
-...
+$CONTENT
 
 ## Rules
 
