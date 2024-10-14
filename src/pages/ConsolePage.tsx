@@ -16,7 +16,7 @@ import { WavRecorder, WavStreamPlayer } from '../lib/wavtools/index.js';
 import { instructionsTemplate } from '../utils/conversation_config.js';
 import { WavRenderer } from '../utils/wav_renderer';
 
-import { X, Edit, Zap, ArrowUp, ArrowDown } from 'react-feather';
+import { Save, X, Edit, Zap, ArrowUp, ArrowDown } from 'react-feather';
 import { Button } from '../components/button/Button';
 import { Toggle } from '../components/toggle/Toggle';
 import { Map } from '../components/Map';
@@ -101,6 +101,7 @@ export function ConsolePage() {
   const eventsScrollHeightRef = useRef(0);
   const eventsScrollRef = useRef<HTMLDivElement>(null);
   const startTimeRef = useRef<string>(new Date().toISOString());
+  const [isSummarizing, setIsSummarizing] = useState(false);
 
   /**
    * All of our variables for displaying application state
@@ -123,7 +124,70 @@ export function ConsolePage() {
     lng: -122.418137,
   });
   const [marker, setMarker] = useState<Coordinates | null>(null);
+  const saveTranscript = useCallback(async () => {
+    setIsSummarizing(true);
+    try {
+      const transcript = items
+        .map((item) => {
+          if (item.role === 'user' || item.role === 'assistant') {
+            return `${item.role.toUpperCase()}: ${
+              item.formatted.transcript || item.formatted.text || ''
+            }\n`;
+          }
+          return '';
+        })
+        .join('\n');
+        const summarizeTranscript = async (transcript: string) => {
+          const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}` // Use the API key from earlier in the component
+            },
+            body: JSON.stringify({
+              model: "gpt-4o-mini",
+              messages: [
+                {
+                  role: "system",
+                  content: "You are a helpful assistant that summarizes conversations."
+                },
+                {
+                  role: "user",
+                  content: `Please summarize the following conversation:\n\n${transcript}`
+                }
+              ],
+              max_tokens: 300
+            })
+          });
+      
+          if (!response.ok) {
+            throw new Error('Failed to summarize transcript');
+          }
+      
+          const data = await response.json();
+          return data.choices[0].message.content;
+        };
 
+      const summary = await summarizeTranscript(transcript);
+
+      const fullContent = `Summary:\n${summary}\n\nFull Transcript:\n${transcript}`;
+
+      const blob = new Blob([fullContent], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'conversation_summary_and_transcript.txt';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error summarizing and saving transcript:', error);
+      alert('Failed to summarize and save transcript. Please try again.');
+    } finally {
+      setIsSummarizing(false);
+    }
+  }, [items, apiKey]);
   /**
    * Utility for formatting the timing of logs
    */
@@ -627,6 +691,14 @@ export function ConsolePage() {
             </div>
           </div>
           <div className="content-actions">
+          <Button
+              label="Save Transcript"
+              icon={Save}
+              buttonStyle="regular"
+              onClick={saveTranscript}
+              disabled={!isConnected || items.length === 0}
+              className="mr-auto"
+            />
             <div style={{display: 'none'}}>
               <Toggle
                 defaultValue={true}
