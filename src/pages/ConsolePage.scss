@@ -247,7 +247,8 @@
 
   .visualization {
     position: absolute;
-    display: flex;
+    // display: flex;
+    display: none;
     bottom: 4px;
     right: 8px;
     padding: 4px;

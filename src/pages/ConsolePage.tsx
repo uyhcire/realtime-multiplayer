@@ -552,8 +552,10 @@ export function ConsolePage() {
                   width: '100%',
                   height: '90%',
                   marginTop: '12pt',
+                  padding: '6pt',
                   resize: 'none',
                 }}
+                autoFocus
                 value={contentValue}
                 onChange={(e) => setContentValue(e.target.value)}
                 // placeholder="Paste your content here..."
